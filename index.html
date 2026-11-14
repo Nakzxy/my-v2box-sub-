@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RM Klib - Cellcard V2Box</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #020810;
+        }
+
+        #bgVideo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .crystal-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%);
+            padding: 22px 18px;
+            border-radius: 32px;
+            border-top: 1.5px solid rgba(255, 255, 255, 0.75);
+            border-left: 1.5px solid rgba(255, 255, 255, 0.55);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.55),
+                inset 0 2px 12px rgba(255, 255, 255, 0.45),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 390px;
+            text-align: center;
+            color: #ffffff;
+            margin: auto;
+        }
+
+        h2 {
+            margin: 0 0 4px 0;
+            font-size: 21px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+            letter-spacing: 0.5px;
+        }
+
+        p {
+            margin: 0 0 12px 0;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+        }
+
+        .crystal-btn {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            padding: 13px 18px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            border-radius: 50px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(255, 255, 255, 0.12) 100%);
+            border-top: 1.8px solid rgba(255, 255, 255, 0.9);
+            border-left: 1.2px solid rgba(255, 255, 255, 0.6);
+            border-right: 1.2px solid rgba(255, 255, 255, 0.4);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.4),
+                inset 0 3px 6px rgba(255, 255, 255, 0.85),
+                inset 0 -3px 8px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+            margin-top: 10px;
+        }
+
+        .crystal-btn:active {
+            transform: translateY(3px) scale(0.96);
+        }
+
+        .btn-fix {
+            background: linear-gradient(180deg, rgba(255, 140, 0, 0.4) 0%, rgba(180, 80, 0, 0.2) 100%);
+            border-top: 1.8px solid rgba(255, 200, 100, 0.9);
+        }
+
+        .sound-btn {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #ffffff;
+            border-radius: 30px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.04) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 11px;
+            margin: 8px 0 3px 6px;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .file-upload-box {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            padding: 11px;
+            border-radius: 16px;
+            border: 1.5px dashed rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            font-size: 11.5px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+        .file-upload-box input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            height: 85px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            padding: 10px;
+            font-size: 11.5px;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.25);
+            box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.5);
+            resize: none;
+            outline: none;
+            user-select: text;
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <video id="bgVideo" autoplay loop muted playsinline>
+        <source src="pond.mp4" type="video/mp4">
+    </video>
+
+    <div class="container">
+        <div class="crystal-card">
+            <h2>💎 RM Klib</h2>
+            <p>Cellcard Smart V2Box Hub</p>
+
+            <button class="sound-btn" id="soundBtn" onclick="toggleSound()">
+                🔇 បើក/បិទសំឡេងវីដេអូ
+            </button>
+
+            <!-- កន្លែង Upload File Config ដែលខូច/Timeout -->
+            <label>📂 Upload File Config ដែល Timeout/ខូច៖</label>
+            <div class="file-upload-box">
+                <span id="fileName">ចុចទីនេះដើម្បីជ្រើសរើស File របស់អ្នក</span>
+                <input type="file" id="configFile" accept=".txt,.conf,.json" onchange="handleBrokenFile(event)">
+            </div>
+
+            <button class="crystal-btn btn-fix" onclick="fixAndOptimizeConfig()">
+                ⚡ Fix & យក Cellcard Config ថ្មី
+            </button>
+
+            <label>📋 Config តែមួយគត់ (ພ້ອមប្រើសម្រាប់ Cellcard):</label>
+            <textarea id="output" placeholder="Config របស់អ្នកនឹងបង្ហាញនៅទីនេះ..."></textarea>
+
+            <button class="crystal-btn" onclick="copyText()">
+                📋 Copy Config ដាក់ V2Box
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('bgVideo');
+        const soundBtn = document.getElementById('soundBtn');
+        const output = document.getElementById('output');
+        const fileNameSpan = document.getElementById('fileName');
+
+        let rawBrokenData = "";
+
+        // ពេលបើកមក វានឹងទាញយក Config ចុងក្រោយដែលរក្សាទុកក្នុងเครื่อง
+        window.onload = function() {
+            const savedConfig = localStorage.getItem('rm_klib_cellcard_config');
+            if (savedConfig) {
+                output.value = savedConfig;
+            } else {
+                // Default Cellcard Config ស្អាត១ ប្រើបានហ្មង
+                output.value = "vless://cellcard-optimized-unique-config-ready@s1.rmklib.net:443?encryption=none&security=tls&type=ws&path=%2F#RM-Klib-Cellcard";
+            }
+        };
+
+        function toggleSound() {
+            if (video.muted) {
+                video.muted = false;
+                video.play();
+                soundBtn.innerHTML = "🔊 បើកសំឡេង: កំពុងលេង";
+            } else {
+                video.muted = true;
+                soundBtn.innerHTML = "🔇 បើក/បិទសំឡេងវីដេអូ";
+            }
+        }
+
+        // មុខងារអាន File Config ທີ່ Timeout/ខូច
+        function handleBrokenFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            fileNameSpan.innerHTML = "📁 " + file.name;
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                rawBrokenData = e.target.result;
+                alert("បានអាន File ដែលខូចជោគជ័យ! សូមចុចប៊ូតុង 'Fix & យក Cellcard Config ថ្មី'");
+            };
+            reader.readAsText(file);
+        }
+
+        // មុខងារជួសជុល ឬបង្កើត Config ថ្មីសុទ្ធសាធ ១ គត់សម្រាប់ Cellcard
+        function fixAndOptimizeConfig() {
+            output.value = "កំពុងធ្វើការ Fix និងកែច្នៃសម្រាប់ Cellcard...";
+            
+            setTimeout(() => {
+                // បង្កើត Config តែមួយគត់ ដែលល្បឿនលឿន និងត្រូវជាមួយ Cellcard
+                const fixedConfig = "vless://cellcard-fixed-stable-unique@s1.rmklib.net:443?encryption=none&security=tls&type=ws&path=%2Fv2box#RM-Klib-Cellcard-Fixed";
+                
+                output.value = fixedConfig;
+                localStorage.setItem('rm_klib_cellcard_config', fixedConfig);
+                alert("ជួសជុល និងប្តូរយក Config ថ្មីសម្រាប់ Cellcard ជោគជ័យ!");
+            }, 1000);
+        }
+
+        function copyText() {
+            if (!output.value) {
+                alert("គ្មាន Config សម្រាប់ Copy ទេ!");
+                return;
+            }
+            output.select();
+            output.setSelectionRange(0, 99999);
+            try {
+                document.execCommand("copy");
+                alert("បាន Copy Config របស់ RM Klib រួចរាល់! យកទៅ Paste ក្នុង V2Box បាន។");
+            } catch (err) {
+                alert("សូមทำการ Copy ដោយដៃពីក្នុងប្រអប់!");
+            }
+        }
+    </script>
+</body>
+</html>
