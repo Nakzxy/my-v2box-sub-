@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>V2Box 4K Realistic Koi Pond</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            /* ពណ៌ទឹកស្រះបែប HD ជម្រៅទឹកជ្រៅ */
+            background: radial-gradient(circle at 50% 30%, #08304a 0%, #031320 70%, #01080e 100%);
+        }
+
+        #pondCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* ប្រអប់កញ្ចក់ថ្លា 3D បែប HD Crystal Glass */
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            pointer-events: none;
+        }
+
+        .glass-card {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 26px 22px;
+            border-radius: 30px;
+            border: 1.2px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.6),
+                inset 0 3px 15px rgba(255, 255, 255, 0.5),
+                inset 0 -4px 15px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 390px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        p {
+            margin: 0 0 20px 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* ប៊ូតុងដំណក់ទឹក 3D បែប HD */
+        .water-btn {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.05) 100%);
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                inset 0 4px 8px rgba(255, 255, 255, 0.7),
+                inset 0 -4px 10px rgba(0, 140, 255, 0.4);
+            cursor: pointer;
+            transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .water-btn:active {
+            transform: scale(0.93);
+        }
+
+        .btn-copy {
+            margin-top: 14px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                inset 0 4px 8px rgba(255, 255, 255, 0.7),
+                inset 0 -4px 10px rgba(40, 200, 100, 0.45);
+        }
+
+        textarea {
+            width: 100%;
+            height: 135px;
+            margin-top: 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            padding: 12px;
+            font-size: 13px;
+            color: #ffffff;
+            background: rgba(2, 15, 25, 0.45);
+            box-shadow: inset 0 5px 12px rgba(0, 0, 0, 0.4);
+            resize: none;
+            outline: none;
+            user-select: text;
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="pondCanvas"></canvas>
+
+    <div class="container">
+        <div class="glass-card">
+            <h2>💎 V2Box 4K Live Pond</h2>
+            <p>Tap anywhere to create HD ripples & swim fish</p>
+
+            <button class="water-btn" onclick="fetchConfigs()">
+                🔄 Update Configs
+            </button>
+
+            <textarea id="output" placeholder="Configs will appear here..."></textarea>
+
+            <button class="water-btn btn-copy" onclick="copyText()">
+                📋 Copy Config
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pondCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let ripples = [];
+
+        class Ripple {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 2;
+                this.maxRadius = 180;
+                this.alpha = 0.9;
+                this.speed = 3.2;
+            }
+            update() {
+                this.radius += this.speed;
+                this.alpha -= 0.012;
+            }
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(200, 245, 255, ${this.alpha})`;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.5})`;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+        }
+
+        // ត្រីធំៗច្បាស់បែប HD ជាមួយនឹងលក្ខណៈហែលដូចត្រីពិត
+        class BigFish {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.angle = Math.random() * Math.PI * 2;
+                this.baseSpeed = 0.9 + Math.random() * 0.7;
+                this.speed = this.baseSpeed;
+                this.size = 24 + Math.random() * 10; // ធ្វើឱ្យត្រីធំជាងមុនស្អាតជាងមុន
+                this.tailPhase = Math.random() * Math.PI * 2;
+                
+                // ពណ៌ត្រី Koi ស្រស់ស្អាតបែប HD
+                const koiColors = [
+                    { body: '#ff4500', spot: '#ffffff', sub: '#ff8c00' }, // ក្រហមស
+                    { body: '#ffa500', spot: '#ffffff', sub: '#ff4500' }, // ទឹកក្រូចស
+                    { body: '#f8f8f8', spot: '#ff2400', sub: '#ffaa00' }, // សលាយក្រហម
+                    { body: '#d4af37', spot: '#ffffff', sub: '#b8860b' }  // មាស
+                ];
+                this.color = koiColors[Math.floor(Math.random() * koiColors.length)];
+            }
+
+            update() {
+                if (this.speed > this.baseSpeed) {
+                    this.speed *= 0.975;
+                }
+                this.angle += (Math.random() - 0.5) * 0.04;
+
+                const margin = 70;
+                if (this.x < margin) this.angle += 0.06;
+                if (this.x > width - margin) this.angle -= 0.06;
+                if (this.y < margin) this.angle += 0.06;
+                if (this.y > height - margin) this.angle -= 0.06;
+
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                this.tailPhase += 0.12 * (this.speed / this.baseSpeed);
+            }
+
+            reactToTouch(tx, ty) {
+                const dx = this.x - tx;
+                const dy = this.y - ty;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 200) {
+                    this.angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.3;
+                    this.speed = 4.5;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                const wag = Math.sin(this.tailPhase) * 8;
+
+                // ស្រមោលត្រីធំនៅបាតស្រះ (HD Depth Shadow)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                ctx.beginPath();
+                ctx.ellipse(-4, 16, this.size * 1.5, this.size * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ព្រុយចំហៀងធំទូលាយ
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.beginPath();
+                ctx.ellipse(4, -this.size * 0.8, this.size * 0.6, this.size * 0.28, -0.4, 0, Math.PI * 2);
+                ctx.ellipse(4, this.size * 0.8, this.size * 0.6, this.size * 0.28, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // កន្ទុយធំបក់បោយសាច់ក្រាស់
+                ctx.fillStyle = this.color.body;
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 1.2, 0);
+                ctx.quadraticCurveTo(-this.size * 2.1, wag - 9, -this.size * 2.8, wag);
+                ctx.quadraticCurveTo(-this.size * 2.1, wag + 9, -this.size * 1.2, 0);
+                ctx.fill();
+
+                // ខ្លួនត្រីធំទូលាយ
+                ctx.fillStyle = this.color.body;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size * 1.5, this.size * 0.68, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // កន្លែងអុចពណ៌លើខ្នងត្រី
+                ctx.fillStyle = this.color.spot;
+                ctx.beginPath();
+                ctx.ellipse(this.size * 0.25, -2, this.size * 0.6, this.size * 0.35, 0.15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ភ្នែកត្រីច្បាស់ល្អ
+                ctx.fillStyle = '#050505';
+                ctx.beginPath();
+                ctx.arc(this.size * 1.05, -this.size * 0.35, 2.2, 0, Math.PI * 2);
+                ctx.arc(this.size * 1.05, this.size * 0.35, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // បង្កើតត្រីធំៗចំនួន ៧ ក្បាលក្នុងស្រះ
+        const fishes = Array.from({ length: 7 }, () => new BigFish());
+
+        function spawnWaterDrop(x, y) {
+            ripples.push(new Ripple(x, y));
+            fishes.forEach(fish => fish.reactToTouch(x, y));
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            spawnWaterDrop(e.clientX, e.clientY);
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // គូរត្រីធំៗ
+            fishes.forEach(fish => {
+                fish.update();
+                fish.draw();
+            });
+
+            // គូររង្វង់រលកទឹក HD
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                ripples[i].update();
+                ripples[i].draw();
+                if (ripples[i].alpha <= 0) {
+                    ripples.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        async function fetchConfigs() {
+            const output = document.getElementById("output");
+            output.value = "Fetching configs...";
+            try {
+                let res = await fetch("https://raw.githubusercontent.com/freefq/free/master/v2");
+                let text = await res.text();
+                output.value = text.slice(0, 1000) + "\n...(Successfully fetched)";
+            } catch (e) {
+                output.value = "Error fetching configs, please try again.";
+            }
+        }
+
+        function copyText() {
+            const output = document.getElementById("output");
+            if (!output.value) {
+                alert("No data to copy!");
+                return;
+            }
+            output.select();
+            document.execCommand("copy");
+            alert("Configs copied successfully!");
+        }
+    </script>
+</body>
+</html>
