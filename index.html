@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>V2Box Koi Pond Live</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: radial-gradient(circle at center, #0a4d68 0%, #052c3f 60%, #021520 100%);
+        }
+
+        #pondCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            pointer-events: none;
+        }
+
+        .glass-card {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 24px 20px;
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.45),
+                inset 0 2px 12px rgba(255, 255, 255, 0.35),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 390px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+            font-size: 21px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        p {
+            margin: 0 0 18px 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .water-btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15.5px;
+            font-weight: 600;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 50px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.05) 100%);
+            box-shadow: 
+                0 8px 20px rgba(0, 0, 0, 0.25),
+                inset 0 3px 6px rgba(255, 255, 255, 0.6),
+                inset 0 -3px 8px rgba(0, 150, 255, 0.3);
+            cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .water-btn:active {
+            transform: scale(0.94);
+        }
+
+        .btn-copy {
+            margin-top: 12px;
+            box-shadow: 
+                0 8px 20px rgba(0, 0, 0, 0.25),
+                inset 0 3px 6px rgba(255, 255, 255, 0.6),
+                inset 0 -3px 8px rgba(46, 204, 113, 0.4);
+        }
+
+        textarea {
+            width: 100%;
+            height: 130px;
+            margin-top: 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 12px;
+            font-size: 12.5px;
+            color: #ffffff;
+            background: rgba(0, 15, 25, 0.35);
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.3);
+            resize: none;
+            outline: none;
+            user-select: text;
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="pondCanvas"></canvas>
+
+    <div class="container">
+        <div class="glass-card">
+            <h2>🎏 V2Box Live Pond</h2>
+            <p>Tap anywhere to create ripples & play with fish</p>
+
+            <button class="water-btn" onclick="fetchConfigs()">
+                🔄 Update Configs
+            </button>
+
+            <textarea id="output" placeholder="Configs will appear here..."></textarea>
+
+            <button class="water-btn btn-copy" onclick="copyText()">
+                📋 Copy Config
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pondCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let ripples = [];
+
+        class Ripple {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 2;
+                this.maxRadius = 140;
+                this.alpha = 0.85;
+                this.speed = 2.6;
+            }
+            update() {
+                this.radius += this.speed;
+                this.alpha -= 0.013;
+            }
+            draw() {
+                if (this.alpha <= 0) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(180, 240, 255, ${this.alpha})`;
+                ctx.lineWidth = 2.2;
+                ctx.stroke();
+
+                if (this.radius > 18) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius - 14, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.6})`;
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        class Fish {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.angle = Math.random() * Math.PI * 2;
+                this.baseSpeed = 1.1 + Math.random() * 0.9;
+                this.speed = this.baseSpeed;
+                this.size = 11 + Math.random() * 6;
+                this.tailPhase = Math.random() * Math.PI * 2;
+                const colors = [
+                    { body: '#ff5722', spot: '#ffffff' },
+                    { body: '#ff9800', spot: '#fff3e0' },
+                    { body: '#f44336', spot: '#ffd54f' },
+                    { body: '#ffffff', spot: '#ff3d00' }
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                if (this.speed > this.baseSpeed) {
+                    this.speed *= 0.97;
+                }
+                this.angle += (Math.random() - 0.5) * 0.06;
+
+                const margin = 50;
+                if (this.x < margin) this.angle += 0.08;
+                if (this.x > width - margin) this.angle -= 0.08;
+                if (this.y < margin) this.angle += 0.08;
+                if (this.y > height - margin) this.angle -= 0.08;
+
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                this.tailPhase += 0.16 * (this.speed / this.baseSpeed);
+            }
+
+            reactToTouch(tx, ty) {
+                const dx = this.x - tx;
+                const dy = this.y - ty;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 160) {
+                    this.angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.4;
+                    this.speed = 4.2;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                const wag = Math.sin(this.tailPhase) * 5;
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                ctx.beginPath();
+                ctx.ellipse(-2, 12, this.size * 1.4, this.size * 0.55, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+                ctx.beginPath();
+                ctx.ellipse(2, -this.size * 0.7, this.size * 0.5, this.size * 0.25, -0.5, 0, Math.PI * 2);
+                ctx.ellipse(2, this.size * 0.7, this.size * 0.5, this.size * 0.25, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = this.color.body;
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 1.1, 0);
+                ctx.quadraticCurveTo(-this.size * 1.9, wag - 6, -this.size * 2.4, wag);
+                ctx.quadraticCurveTo(-this.size * 1.9, wag + 6, -this.size * 1.1, 0);
+                ctx.fill();
+
+                ctx.fillStyle = this.color.body;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size * 1.45, this.size * 0.62, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = this.color.spot;
+                ctx.beginPath();
+                ctx.ellipse(this.size * 0.2, -1, this.size * 0.55, this.size * 0.32, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(this.size * 0.95, -this.size * 0.32, 1.6, 0, Math.PI * 2);
+                ctx.arc(this.size * 0.95, this.size * 0.32, 1.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        const fishes = Array.from({ length: 9 }, () => new Fish());
+
+        function spawnWaterDrop(x, y) {
+            ripples.push(new Ripple(x, y));
+            fishes.forEach(fish => fish.reactToTouch(x, y));
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            spawnWaterDrop(e.clientX, e.clientY);
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            fishes.forEach(fish => {
+                fish.update();
+                fish.draw();
+            });
+
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                ripples[i].update();
+                ripples[i].draw();
+                if (ripples[i].alpha <= 0) {
+                    ripples.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        async function fetchConfigs() {
+            const output = document.getElementById("output");
+            output.value = "Fetching configs...";
+            try {
+                let res = await fetch("https://raw.githubusercontent.com/freefq/free/master/v2");
+                let text = await res.text();
+                output.value = text.slice(0, 1000) + "\n...(Successfully fetched)";
+            } catch (e) {
+                output.value = "Error fetching configs, please try again.";
+            }
+        }
+
+        function copyText() {
+            const output = document.getElementById("output");
+            if (!output.value) {
+                alert("No data to copy!");
+                return;
+            }
+            output.select();
+            document.execCommand("copy");
+            alert("Configs copied successfully!");
+        }
+    </script>
+</body>
+</html>
